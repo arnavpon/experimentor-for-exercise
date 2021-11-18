@@ -15,6 +15,12 @@
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
+    },
+    {
+      "name": "experimentor_for_exercise (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
     }
   ]
 }
