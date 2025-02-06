@@ -1,5 +1,8 @@
 import 'dart:developer';
 
+// basic format: initialize the validator class & configure w/ the requirements
+// then run the inputs through the validator, which tells you if the input conforms, & if not, generates a useful error message to you & the user
+
 class BaseFormInputValidator {
   // base validator
   BaseFormInputValidator();
@@ -16,6 +19,9 @@ class BaseFormInputValidator {
 class StringFormInputValidator extends BaseFormInputValidator {
   // for validating text inputs
   StringFormInputValidator() : super();
+
+  // what are the different things you can validate?
+  // min & max length of string
 }
 
 class NumericalFormInputValidator extends BaseFormInputValidator {

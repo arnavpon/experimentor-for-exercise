@@ -20,7 +20,9 @@ class ExerciseAutocompleter extends StatelessWidget {
       return <
           WeightliftingExercise>[]; // wait until user starts typing before suggesting
     }
-    var _exerciseList = await this._database.allExercises; // *** use provider
+    var _exerciseList = await this
+        ._database
+        .allExercises; // *** use provider - should have access to context as widget
     return _exerciseList.where((WeightliftingExercise exercise) {
       return exercise.name.toLowerCase().contains(input.toLowerCase());
     });

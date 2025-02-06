@@ -1,7 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:experimentor_for_exercise/models/database.dart';
-import "package:experimentor_for_exercise/shared/string_helpers.dart";
+import 'package:experimentor_for_exercise/shared/useful_string_extensions.dart';
 
 // shows salient information for workout
 
