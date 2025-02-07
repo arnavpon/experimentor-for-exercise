@@ -1,10 +1,9 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:experimentor_for_exercise/models/database.dart';
-import 'package:experimentor_for_exercise/views/widgets/workout_summary.dart';
-import 'package:experimentor_for_exercise/views/widgets/exercise_autocompleter.dart';
-import 'package:experimentor_for_exercise/shared/form_input_validator.dart';
+import '../widgets/workout_summary.dart';
+import '../widgets/exercise_autocompleter.dart';
+import '../../shared/form_input_validator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -19,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _repCount = 0;
   double _weight = 0;
 
-  final _database = MyDatabase(); // single DB connection - provider?
+  //final _database = MyDatabase(); // single DB connection - provider?
   final _weightFieldController = TextEditingController();
 
   void _updateExercise(String value) {
@@ -34,25 +33,26 @@ class _HomeScreenState extends State<HomeScreen> {
       log("Exercise: $_exercise | Weight: $_weight | Reps; $_repCount");
 
       // write to db & udate UI
-      var matches = await _database.getExercisesForName(_exercise);
+      // var matches = await _database.getExercisesForName(_exercise);
+      var matches = [];
       var _exerciseId;
       if (matches.length == 0) {
         // only add exercise -> db if it doesn't already exist
-        _exerciseId = await _database.addExercise(
-            WeightliftingExercisesCompanion.insert(name: _exercise));
+        // _exerciseId = await _database.addExercise(
+        //     WeightliftingExercisesCompanion.insert(name: _exercise));
       } else if (matches.length == 1) {
         _exerciseId = matches.first.id;
       } else {
         throw ("Error: more than 1 exercise found with that name!");
       }
 
-      await _database.addSet(WeightliftingSetsCompanion.insert(
-          repetitions: _repCount,
-          weight: _weight,
-          timestamp: DateTime.now(),
-          exercise: _exerciseId)); // add set -> db
-      var sets = await _database.allSetsSorted; // ***
-      log(sets.toString()); // ***
+      // await _database.addSet(WeightliftingSetsCompanion.insert(
+      //     repetitions: _repCount,
+      //     weight: _weight,
+      //     timestamp: DateTime.now(),
+      //     exercise: _exerciseId)); // add set -> db
+      // var sets = await _database.allSetsSorted; // ***
+      // log(sets.toString()); // ***
 
       setState(() {
         // This call to setState tells the Flutter framework that something has
@@ -83,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: <Widget>[
                     ExerciseAutocompleter(
-                      _database,
                       _updateExercise,
                       defaultText: _exercise,
                     ),
@@ -106,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               )),
-          WorkoutSummaryWidget(_database),
+          WorkoutSummaryWidget(),
         ],
       ),
       floatingActionButton: FloatingActionButton(

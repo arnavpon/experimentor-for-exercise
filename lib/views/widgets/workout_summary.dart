@@ -1,13 +1,14 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:experimentor_for_exercise/models/database.dart';
-import 'package:experimentor_for_exercise/shared/useful_string_extensions.dart';
+import '../../shared/useful_string_extensions.dart';
 
 // shows salient information for workout
 
 class WorkoutSummaryWidget extends StatefulWidget {
-  final MyDatabase _database;
-  const WorkoutSummaryWidget(this._database, {Key? key}) : super(key: key);
+  //final MyDatabase _database;
+  //const WorkoutSummaryWidget(this._database, {Key? key}) : super(key: key);
+  const WorkoutSummaryWidget({Key? key}) : super(key: key);
+
 
   @override
   _WorkoutSummaryWidgetState createState() => _WorkoutSummaryWidgetState();
@@ -17,42 +18,43 @@ class _WorkoutSummaryWidgetState extends State<WorkoutSummaryWidget> {
   int _totalTime = 0;
   DateTime _startTime = DateTime.now();
   DateTime _endTime = DateTime.now();
-  var _setsByExercise = Map<String, List<WeightliftingSet>>();
+  var _setsByExercise = Map<String, List<int>>();
 
   bool _isCurrentWorkout() {
     /// checks if the most recent workout is in the past, or currently taking place
     return !(DateTime.now().difference(_startTime) >= Duration(hours: 2));
   }
 
-  Future<List<WeightliftingSet>> _getWorkout() async {
+  Future<List<int>> _getWorkout() async {
     log("\n[WSWidget] getWorkout... All sets:");
-    var _db = widget._database;
-    var sets = await _db
-        .allSetsSorted; // memory intensive when you have enough sets, pull as stream?
+    // var _db = widget._database;
+    // var sets = await _db
+    //     .allSetsSorted; // memory intensive when you have enough sets, pull as stream?
+    var sets = [];
     log(sets.toString());
     if (sets.isNotEmpty) {
       var lastSetTime = sets.first.timestamp;
-      var workout = await widget._database.getSetsForWorkout(lastSetTime);
-      log(workout.toString());
-      _startTime = workout.first.timestamp; // ts for first set in workout
-      _endTime = workout.last.timestamp; // ts for last set in workout
+      // var workout = await widget._database.getSetsForWorkout(lastSetTime);
+      // log(workout.toString());
+      // _startTime = workout.first.timestamp; // ts for first set in workout
+      // _endTime = workout.last.timestamp; // ts for last set in workout
       _totalTime = _isCurrentWorkout()
           ? DateTime.now().difference(_startTime).inMinutes
           : _endTime
               .difference(_startTime)
               .inMinutes; // total workout time depends on whether it is a current or old workout
-      _setsByExercise = _sortWorkoutByExercise(workout);
-      return workout;
+      // _setsByExercise = _sortWorkoutByExercise(workout);
+      // return workout;
     }
     return [];
   }
 
-  Map<String, List<WeightliftingSet>> _sortWorkoutByExercise(
-      List<WeightliftingSet> workout) {
-    var _sets = Map<String, List<WeightliftingSet>>();
-    workout.forEach((WeightliftingSet set) async {
-      var exercise = await widget._database.getExerciseById(set.exercise);
-      _setsByExercise.update(exercise.name, (value) {
+  Map<String, List<int>> _sortWorkoutByExercise(
+      List<int> workout) {
+    var _sets = Map<String, List<int>>();
+    workout.forEach((int set) async {
+      // var exercise = await widget._database.getExerciseById(set.exercise);
+      _setsByExercise.update("test", (value) {
         value.add(set);
         return value;
       }, ifAbsent: () => [set]);
@@ -69,8 +71,8 @@ class _WorkoutSummaryWidgetState extends State<WorkoutSummaryWidget> {
       log("\n$exercise");
       sets.forEach((set) {
         // aggregate total weight lifted by exercise
-        log(set.toJsonString());
-        _totalWeight += set.weight * set.repetitions;
+        // log(set.toJsonString());
+        // _totalWeight += set.weight * set.repetitions;
       });
       tiles.add(ListTile(
         title: Text(
@@ -86,7 +88,7 @@ class _WorkoutSummaryWidgetState extends State<WorkoutSummaryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<WeightliftingSet>>(
+    return FutureBuilder<List<int>>(
         future: _getWorkout(),
         builder: (context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {

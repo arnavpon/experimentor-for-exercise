@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:experimentor_for_exercise/views/screens/home_screen.dart';
+import 'views/screens/home_screen.dart';
 
 void main() {
   runApp(MyApp());
