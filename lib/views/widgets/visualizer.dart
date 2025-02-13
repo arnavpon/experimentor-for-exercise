@@ -39,12 +39,10 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
     });
 
     _byDate.forEach((key, value) {
-      // order by timestamp (earliest to latest)
-      value.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // order by timestamp (latest to earliest)
+      value.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     });
-    setState(() {
-      // updates table
-    });
+    setState(() {});
   }
 
   List<TableRow> makeRemainingRows() {
