@@ -48,15 +48,14 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
   List<TableRow> makeRemainingRows() {
     // creates rows using the byDate map
     List<TableRow> rows = [];
-    _byDate.forEach((date, listOfSets) {
+    _byDate.forEach((date, listOfWorkoutSets) {
       String consolidatedDataString = "";
       double totalWeight = 0;
       String unit = "lbs.";
-      listOfSets.forEach((element) {
+      String timeElapsed = "";
+      listOfWorkoutSets.forEach((element) {
         switch (element.equipmentType) {
           // aggregation logic works differently based on equipment type
-          case "barbell":
-            totalWeight += element.weight * element.nOfReps;
           case EQUIPMENTTYPE_DUMBBELL:
             // double the weight before aggregating since each arm does the same weight
             totalWeight += element.weight * element.nOfReps * 2;
@@ -65,15 +64,23 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
             totalWeight += element.nOfReps;
             unit = "reps";
           default:
-            break;
+            // for barbell and other
+            totalWeight += element.weight * element.nOfReps;
         }
+        int _td = listOfWorkoutSets.first.timestamp
+            .difference(listOfWorkoutSets.last.timestamp)
+            .inSeconds;
+        print(_td);
+        print(_td / 60);
+        print((_td / 60).floor());
+        timeElapsed = "${(_td / 60).floor()}m ${_td % 60}s";
         consolidatedDataString +=
             "${element.weight} lbs. (${element.equipmentType}) x${element.nOfReps} reps\n";
       });
       rows.add(TableRow(children: [
         Center(child: Text(date.toString())),
-        Center(child: Text(listOfSets[0].movement)),
-        Center(child: Text("$totalWeight $unit")),
+        Center(child: Text(listOfWorkoutSets[0].movement)),
+        Center(child: Text("$totalWeight $unit in $timeElapsed")),
         Center(child: Text(consolidatedDataString)),
       ]));
     });
@@ -127,7 +134,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
               TableRow(children: [
                 Center(child: Text('Date')),
                 Center(child: Text('Movement')),
-                Center(child: Text('Total Weight Moved')),
+                Center(child: Text('Total Weight Moved in Time')),
                 Center(child: Text('Consolidated Data')),
               ]),
               ...makeRemainingRows(),
