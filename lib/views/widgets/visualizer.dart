@@ -70,17 +70,16 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
         int _td = listOfWorkoutSets.first.timestamp
             .difference(listOfWorkoutSets.last.timestamp)
             .inSeconds;
-        print(_td);
-        print(_td / 60);
-        print((_td / 60).floor());
         timeElapsed = "${(_td / 60).floor()}m ${_td % 60}s";
         consolidatedDataString +=
-            "${(element.weight).toStringAsFixed(2)} lbs. (${element.equipmentType}) x${element.nOfReps} reps\n";
+            "${element.weight.toStringAsFixed(2)} lbs. (${element.equipmentType}) x${element.nOfReps} reps\n";
       });
       rows.add(TableRow(children: [
         Center(child: Text(date.toString())),
         Center(child: Text(listOfWorkoutSets[0].movement)),
-        Center(child: Text("$totalWeight $unit in $timeElapsed")),
+        Center(
+            child: Text(
+                "${totalWeight.toStringAsFixed(2)} $unit in $timeElapsed")),
         Center(child: Text(consolidatedDataString)),
       ]));
     });

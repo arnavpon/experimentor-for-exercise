@@ -57,8 +57,8 @@ class _LoggerFormState extends State<LoggerForm> {
 
       await db.into(db.weightliftingSet).insert(
           WeightliftingSetCompanion.insert(
-              movement: _movement,
-              equipmentType: _equipmentType,
+              movement: _movement.toLowerCase().trim(),
+              equipmentType: _equipmentType.toLowerCase().trim(),
               nOfReps: _repCount,
               weight: _weight)); // add set -> db
       var allMovements = await db.select(db.movements).get(); // ***
