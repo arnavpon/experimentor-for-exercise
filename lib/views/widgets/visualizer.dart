@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:test/constants.dart';
 import 'package:test/models/database.dart';
-import 'package:test/models/tables.dart';
 import 'package:test/shared/form_input_validator.dart';
 
 class VisualizerWidget extends StatefulWidget {
@@ -30,7 +30,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       // aggregate by date
       print(e);
       String date =
-          "${e.timestamp.year}-${e.timestamp.month}-${e.timestamp.day}";
+          "${e.timestamp.month}/${e.timestamp.day}/${e.timestamp.year}";
       if (_byDate.containsKey(date)) {
         _byDate[date]!.add(e);
       } else {
@@ -51,15 +51,32 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
     // creates rows using the byDate map
     List<TableRow> rows = [];
     _byDate.forEach((date, listOfSets) {
-      String consolidatedData = "";
+      String consolidatedDataString = "";
+      double totalWeight = 0;
+      String unit = "lbs.";
       listOfSets.forEach((element) {
-        consolidatedData +=
+        switch (element.equipmentType) {
+          // aggregation logic works differently based on equipment type
+          case "barbell":
+            totalWeight += element.weight * element.nOfReps;
+          case EQUIPMENTTYPE_DUMBBELL:
+            // double the weight before aggregating since each arm does the same weight
+            totalWeight += element.weight * element.nOfReps * 2;
+          case EQUIPMENTTYPE_BODYWEIGHT:
+            // simply add the reps instead of the weight
+            totalWeight += element.nOfReps;
+            unit = "reps";
+          default:
+            break;
+        }
+        consolidatedDataString +=
             "${element.weight} lbs. (${element.equipmentType}) x${element.nOfReps} reps\n";
       });
       rows.add(TableRow(children: [
-        Text(date.toString()),
-        Text(listOfSets[0].movement),
-        Text(consolidatedData),
+        Center(child: Text(date.toString())),
+        Center(child: Text(listOfSets[0].movement)),
+        Center(child: Text("$totalWeight $unit")),
+        Center(child: Text(consolidatedDataString)),
       ]));
     });
     return rows;
@@ -71,7 +88,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text('Quick View'),
+          Text('View Workouts by Exercise'),
           TypeAheadField<Movement>(
             controller: _searchBarController,
             builder: (context, controller, focusNode) {
@@ -107,12 +124,13 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
             hideOnEmpty: true,
           ),
           Table(
-            border: TableBorder.all(color: Colors.black),
+            border: TableBorder.all(color: Colors.deepOrange),
             children: [
               TableRow(children: [
-                Text('Date'),
-                Text('Movement'),
-                Text('Consolidated Data'),
+                Center(child: Text('Date')),
+                Center(child: Text('Movement')),
+                Center(child: Text('Total Weight Moved')),
+                Center(child: Text('Consolidated Data')),
               ]),
               ...makeRemainingRows(),
             ],

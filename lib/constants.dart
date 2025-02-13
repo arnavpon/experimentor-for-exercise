@@ -1,1 +1,3 @@
-const TABLE_WEIGHTLIFTINGSETS = 'weightlifting_sets';
+const EQUIPMENTTYPE_DUMBBELL = "dumbbell";
+const EQUIPMENTTYPE_BARBELL = "barbell";
+const EQUIPMENTTYPE_BODYWEIGHT = "bodyweight";
