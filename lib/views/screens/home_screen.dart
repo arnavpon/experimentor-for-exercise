@@ -24,9 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
             appBar: AppBar(
               bottom: TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.login)),
-                  Tab(icon: Icon(Icons.note)),
-                  Tab(icon: Icon(Icons.fitness_center)),
+                  Tab(icon: Icon(Icons.note_add)),
+                  Tab(icon: Icon(Icons.today)),
+                  Tab(icon: Icon(Icons.history)),
                 ],
               ),
             ),
@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
               LoggerForm(db),
               WorkoutSummaryWidget(db),
               VisualizerWidget(db),
-            ]), // This trailing comma makes auto-formatting nicer for build methods.
+            ]),
           ));
     });
   }

@@ -76,128 +76,138 @@ class _LoggerFormState extends State<LoggerForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: <Widget>[
-        Text("Log your workout"),
-        Row(
-          children: [
-            ElevatedButton(
-                onPressed: () => {},
-                child: Text("Weights"),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(Colors.blue),
-                  foregroundColor: WidgetStateProperty.all(Colors.white),
-                )),
-            Spacer(),
-            ElevatedButton(onPressed: () => {}, child: Text("Cardio")),
-          ],
-        ),
-        Form(
-            key: _formKey,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Column(
-                children: <Widget>[
-                  TypeAheadField<Movement>(
-                    controller: _movementController,
-                    builder: (context, controller, focusNode) {
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: const InputDecoration(hintText: "movement"),
-                        validator: StringFormInputValidator().validateInput,
-                        onSaved: (String? value) {
-                          _movement = value!;
-                        },
-                      );
-                    },
-                    itemBuilder: (context, suggestion) {
-                      return ListTile(
-                        title: Text(suggestion.name),
-                      );
-                    },
-                    onSelected: (value) {
-                      _movementController.text = value.name;
-                    },
-                    suggestionsCallback: (input) async {
-                      if (input.isEmpty) {
-                        return null;
-                      }
-                      var results =
-                          await widget._db.select(widget._db.movements).get();
-                      return results
-                          .where((e) => e.name
-                              .toLowerCase()
-                              .contains(input.toLowerCase()))
-                          .toList();
-                    },
-                    hideOnEmpty: true,
-                  ),
-                  TypeAheadField<EquipmentType>(
-                    controller: _equipmentTypeController,
-                    builder: (context, controller, focusNode) {
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: const InputDecoration(
-                            hintText: "equipment type (e.g. dumbbell)"),
-                        validator: StringFormInputValidator().validateInput,
-                        onSaved: (String? value) {
-                          _equipmentType = value!;
-                        },
-                      );
-                    },
-                    itemBuilder: (context, suggestion) {
-                      return ListTile(
-                        title: Text(suggestion.name),
-                      );
-                    },
-                    onSelected: (value) {
-                      _equipmentTypeController.text = value.name;
-                    },
-                    suggestionsCallback: (input) async {
-                      if (input.isEmpty) {
-                        return null;
-                      }
-                      var results = await widget._db
-                          .select(widget._db.equipmentTypes)
-                          .get();
-                      return results
-                          .where((e) => e.name
-                              .toLowerCase()
-                              .contains(input.toLowerCase()))
-                          .toList();
-                    },
-                    hideOnEmpty: true,
-                  ),
-                  TextFormField(
-                    controller: _weightFieldController,
-                    decoration:
-                        const InputDecoration(hintText: "weight (lbs.)"),
-                    validator: NumericalFormInputValidator().validateInput,
-                    onSaved: (String? value) {
-                      _weight = double.parse(value!);
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(hintText: "# of reps"),
-                    validator: IntegerFormInputValidator().validateInput,
-                    onSaved: (String? value) {
-                      _repCount = int.parse(value!);
-                    },
-                  ),
-                  ElevatedButton(
-                    onPressed: () => _reportCompletedSet(widget._db),
-                    child: Row(children: [
-                      const Icon(Icons.save),
-                      const Text("  Save"),
-                    ]),
-                  ),
-                ],
+    return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          body: TabBarView(children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Text("Log your workout"),
+                Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      child: Column(
+                        children: <Widget>[
+                          TypeAheadField<Movement>(
+                            controller: _movementController,
+                            builder: (context, controller, focusNode) {
+                              return TextFormField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration:
+                                    const InputDecoration(hintText: "movement"),
+                                validator:
+                                    StringFormInputValidator().validateInput,
+                                onSaved: (String? value) {
+                                  _movement = value!;
+                                },
+                              );
+                            },
+                            itemBuilder: (context, suggestion) {
+                              return ListTile(
+                                title: Text(suggestion.name),
+                              );
+                            },
+                            onSelected: (value) {
+                              _movementController.text = value.name;
+                            },
+                            suggestionsCallback: (input) async {
+                              if (input.isEmpty) {
+                                return null;
+                              }
+                              var results = await widget._db
+                                  .select(widget._db.movements)
+                                  .get();
+                              return results
+                                  .where((e) => e.name
+                                      .toLowerCase()
+                                      .contains(input.toLowerCase()))
+                                  .toList();
+                            },
+                            hideOnEmpty: true,
+                          ),
+                          TypeAheadField<EquipmentType>(
+                            controller: _equipmentTypeController,
+                            builder: (context, controller, focusNode) {
+                              return TextFormField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: const InputDecoration(
+                                    hintText: "equipment type (e.g. dumbbell)"),
+                                validator:
+                                    StringFormInputValidator().validateInput,
+                                onSaved: (String? value) {
+                                  _equipmentType = value!;
+                                },
+                              );
+                            },
+                            itemBuilder: (context, suggestion) {
+                              return ListTile(
+                                title: Text(suggestion.name),
+                              );
+                            },
+                            onSelected: (value) {
+                              _equipmentTypeController.text = value.name;
+                            },
+                            suggestionsCallback: (input) async {
+                              if (input.isEmpty) {
+                                return null;
+                              }
+                              var results = await widget._db
+                                  .select(widget._db.equipmentTypes)
+                                  .get();
+                              return results
+                                  .where((e) => e.name
+                                      .toLowerCase()
+                                      .contains(input.toLowerCase()))
+                                  .toList();
+                            },
+                            hideOnEmpty: true,
+                          ),
+                          TextFormField(
+                            controller: _weightFieldController,
+                            decoration: const InputDecoration(
+                                hintText: "weight (lbs.)"),
+                            validator:
+                                NumericalFormInputValidator().validateInput,
+                            onSaved: (String? value) {
+                              _weight = double.parse(value!);
+                            },
+                          ),
+                          TextFormField(
+                            decoration:
+                                const InputDecoration(hintText: "# of reps"),
+                            validator:
+                                IntegerFormInputValidator().validateInput,
+                            onSaved: (String? value) {
+                              _repCount = int.parse(value!);
+                            },
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _reportCompletedSet(widget._db),
+                            child: Row(children: [
+                              const Icon(Icons.save),
+                              const Text("  Save"),
+                            ]),
+                          ),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+            Container(),
+          ]),
+          appBar: AppBar(
+            bottom: TabBar(tabs: [
+              Tab(icon: Icon(Icons.fitness_center)),
+              Tab(
+                icon: Icon(Icons.heart_broken),
               ),
-            )),
-      ],
-    );
+            ]),
+          ),
+        ));
   }
 }

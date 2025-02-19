@@ -1,8 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:test/constants.dart';
 import 'package:test/models/database.dart';
 import 'package:test/shared/form_input_validator.dart';
+
+import 'package:drift/drift.dart' as drift;
 
 class VisualizerWidget extends StatefulWidget {
   final AppDatabase _db;
@@ -16,6 +20,7 @@ class VisualizerWidget extends StatefulWidget {
 class _VisualizerWidgetState extends State<VisualizerWidget> {
   final _searchBarController = TextEditingController();
   Map<String, List<WeightliftingSetData>> _byDate = {};
+  bool _showEditForm = false; // whether to show the edit form
 
   void aggregateDataByDate(Movement movement) async {
     /// fetch data from db and aggregate by date
@@ -45,42 +50,106 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
     setState(() {});
   }
 
+  Future updateEntry(AppDatabase db, int id, String movement, int nOfReps,
+      double weight, String equipmentType) async {
+    // update entry in db
+    print(
+        "Updating entry with id: $id & data = $movement | $nOfReps | $weight | $equipmentType");
+    return await (db.update(db.weightliftingSet)
+          ..where((entry) => entry.id.equals(id)))
+        .write(WeightliftingSetCompanion(
+      movement: drift.Value(movement),
+      nOfReps: drift.Value(nOfReps),
+      weight: drift.Value(weight),
+      equipmentType: drift.Value(equipmentType),
+    ));
+  }
+
+  Widget showEditForm(int id) {
+    // when user taps on the button showing a set of data, show the edit form, indicating the id of the item to edit
+    // want to reuse the same entry form, just with prepopulated data, so make that its own widget
+    return Container();
+  }
+
   List<TableRow> makeRemainingRows() {
     // creates rows using the byDate map
     List<TableRow> rows = [];
     _byDate.forEach((date, listOfWorkoutSets) {
-      String consolidatedDataString = "";
+      int nOfReps = 0;
+      List<String> dataForSet = [];
       double totalWeight = 0;
-      String unit = "lbs.";
       String timeElapsed = "";
-      listOfWorkoutSets.forEach((element) {
-        switch (element.equipmentType) {
-          // aggregation logic works differently based on equipment type
-          case EQUIPMENTTYPE_DUMBBELL:
-            // double the weight before aggregating since each arm does the same weight
-            totalWeight += element.weight * element.nOfReps * 2;
+      int entryID = -1;
+      String repsString = "";
+      String weightString = "";
+      EQUIPMENTTYPES.forEach((type) {
+        switch (type) {
           case EQUIPMENTTYPE_BODYWEIGHT:
-            // simply add the reps instead of the weight
-            totalWeight += element.nOfReps;
-            unit = "reps";
+            // for bodyweight sets, display string showing aggregated reps
+            nOfReps = listOfWorkoutSets
+                .where((e) => (e.equipmentType == type))
+                .fold<int>(nOfReps, (previous, element) {
+              return (previous + element.nOfReps);
+            });
+            repsString = "$nOfReps reps";
           default:
-            // for barbell and other
-            totalWeight += element.weight * element.nOfReps;
+            // for weighted sets, display string showing aggregated weight
+            if (type == EQUIPMENTTYPE_DUMBBELL) {
+              // double value for dumbbells since weight is in each hand
+              print("dumbbell! total weight: $totalWeight");
+              totalWeight = listOfWorkoutSets
+                  .where((e) => (e.equipmentType == type))
+                  .fold<double>(totalWeight, (previous, element) {
+                print("previous: $previous | element: $element");
+                return (previous + element.nOfReps * element.weight * 2);
+              });
+              print(totalWeight);
+            } else {
+              // default option, simply aggregate weight x reps
+              print("not dumbbell, type: $type, weight: $totalWeight");
+              totalWeight = listOfWorkoutSets
+                  .where((e) => (e.equipmentType == type))
+                  .fold<double>(totalWeight, (previous, element) {
+                print("previous: $previous | element: $element");
+                return (previous + element.weight * element.nOfReps);
+              });
+              print(totalWeight);
+            }
+            weightString = "${totalWeight.toStringAsFixed(2)} lbs";
         }
+      });
+      print("Total weight: $totalWeight | nOfReps: $nOfReps");
+
+      listOfWorkoutSets.forEach((element) {
+        entryID = element.id;
         int _td = listOfWorkoutSets.first.timestamp
             .difference(listOfWorkoutSets.last.timestamp)
             .inSeconds;
         timeElapsed = "${(_td / 60).floor()}m ${_td % 60}s";
-        consolidatedDataString +=
-            "${element.weight.toStringAsFixed(2)} lbs. (${element.equipmentType}) x${element.nOfReps} reps\n";
+        dataForSet.add(
+            "${element.weight.toStringAsFixed(2)} lbs (${element.equipmentType}) x${element.nOfReps} reps");
       });
+
       rows.add(TableRow(children: [
         Center(child: Text(date.toString())),
         Center(child: Text(listOfWorkoutSets[0].movement)),
         Center(
-            child: Text(
-                "${totalWeight.toStringAsFixed(2)} $unit in $timeElapsed")),
-        Center(child: Text(consolidatedDataString)),
+            child: Text((totalWeight == 0)
+                ? "$repsString in $timeElapsed"
+                : (nOfReps == 0)
+                    ? "$weightString in $timeElapsed"
+                    : "$repsString + $weightString in $timeElapsed")),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: dataForSet
+                .map((data) => ElevatedButton(
+                      child: Text(data),
+                      onPressed: () => _showEditForm,
+                    ))
+                .toList(),
+          ),
+        ),
       ]));
     });
     return rows;
@@ -92,6 +161,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          (_showEditForm) ? showEditForm(1) : Container(),
           Text('View Workouts by Exercise'),
           TypeAheadField<Movement>(
             controller: _searchBarController,
