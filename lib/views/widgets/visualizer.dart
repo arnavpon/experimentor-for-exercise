@@ -19,34 +19,48 @@ class VisualizerWidget extends StatefulWidget {
 
 class _VisualizerWidgetState extends State<VisualizerWidget> {
   final _searchBarController = TextEditingController();
-  Map<String, List<WeightliftingSetData>> _byDate = {};
+  List<MapEntry<DateTime, List<WeightliftingSetData>>> setsOrderedByDate = [];
   bool _showEditForm = false; // whether to show the edit form
 
   void aggregateDataByDate(Movement movement) async {
-    /// fetch data from db and aggregate by date
+    /// fetch data from db and aggregate by date, sorting from most -> least recent
 
     var results = await (await widget._db.select(widget._db.weightliftingSet)
           ..where((e) => (e.movement.equals(movement.name))))
         .get();
     print("Found ${results.length} entries for ${movement.name}: \n$results");
 
-    _byDate = Map<String, List<WeightliftingSetData>>();
+    final byDate = Map<DateTime, List<WeightliftingSetData>>();
     results.forEach((e) {
-      // aggregate by date
+      // aggregate sets by date performed
       print(e);
-      String date =
-          "${e.timestamp.month}/${e.timestamp.day}/${e.timestamp.year}";
-      if (_byDate.containsKey(date)) {
-        _byDate[date]!.add(e);
+      final ts = e.timestamp;
+      final date = DateTime(ts.year, ts.month, ts.day); // remove time data
+      if (byDate.containsKey(date)) {
+        byDate[date]!.add(e);
       } else {
-        _byDate[date] = [e];
+        byDate[date] = [e];
       }
     });
 
-    _byDate.forEach((key, value) {
-      // order by timestamp (latest to earliest)
-      value.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    // order the sets by date performed from most -> least recent
+    List<MapEntry<DateTime, List<WeightliftingSetData>>> listFromMap = [];
+    byDate.forEach((ts, entry) {
+      listFromMap.add(MapEntry(ts, entry));
     });
+    listFromMap.sort((a, b) => b.key.compareTo(a.key));
+    setsOrderedByDate = listFromMap;
+
+    // convert to a list
+    print(byDate);
+    byDate.entries.toList().sort((a, b) => b.key.compareTo(a.key));
+    print(byDate);
+
+    byDate.forEach((timestamp, workoutData) {
+      // order the individual sets for a given workout by timestamp (most -> least recent)
+      workoutData.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    });
+
     setState(() {});
   }
 
@@ -74,7 +88,10 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
   List<TableRow> makeRemainingRows() {
     // creates rows using the byDate map
     List<TableRow> rows = [];
-    _byDate.forEach((date, listOfWorkoutSets) {
+    setsOrderedByDate.forEach((entry) {
+      DateTime timestamp = entry.key;
+      List<WeightliftingSetData> listOfWorkoutSets = entry.value;
+
       int nOfReps = 0;
       List<String> dataForSet = [];
       double totalWeight = 0;
@@ -131,7 +148,9 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       });
 
       rows.add(TableRow(children: [
-        Center(child: Text(date.toString())),
+        Center(
+            child:
+                Text("${timestamp.month}/${timestamp.day}/${timestamp.year}")),
         Center(child: Text(listOfWorkoutSets[0].movement)),
         Center(
             child: Text((totalWeight == 0)
@@ -143,8 +162,13 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: dataForSet
-                .map((data) => ElevatedButton(
+                .map((data) => TextButton(
                       child: Text(data),
+                      style: TextButton.styleFrom(
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.transparent,
+                      ),
                       onPressed: () => _showEditForm,
                     ))
                 .toList(),
