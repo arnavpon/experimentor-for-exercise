@@ -19,6 +19,35 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  Future<Map<String, dynamic>> exportAllData() async {
+    final movementsList = await select(movements).get();
+    final equipmentTypesList = await select(equipmentTypes).get();
+    final weightliftingSets = await select(weightliftingSet).get();
+    final cardioSets = await select(cardioSet).get();
+
+    return {
+      'exportDate': DateTime.now().toIso8601String(),
+      'movements': movementsList.map((m) => {'id': m.id, 'name': m.name}).toList(),
+      'equipmentTypes': equipmentTypesList.map((e) => {'id': e.id, 'name': e.name}).toList(),
+      'weightliftingSets': weightliftingSets.map((w) => {
+        'id': w.id,
+        'movement': w.movement,
+        'equipmentType': w.equipmentType,
+        'timestamp': w.timestamp.toIso8601String(),
+        'nOfReps': w.nOfReps,
+        'weight': w.weight,
+      }).toList(),
+      'cardioSets': cardioSets.map((c) => {
+        'id': c.id,
+        'movement': c.movement,
+        'equipmentType': c.equipmentType,
+        'timestamp': c.timestamp.toIso8601String(),
+        'distance': c.distance,
+        'duration': c.duration,
+      }).toList(),
+    };
+  }
+
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'experimentor-for-exercise-app',
