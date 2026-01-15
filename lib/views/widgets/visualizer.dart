@@ -1,10 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:test/constants.dart';
-import 'package:test/models/database.dart';
-import 'package:test/shared/form_input_validator.dart';
+import 'package:ExerciseMentor/constants.dart';
+import 'package:ExerciseMentor/models/database.dart';
+import 'package:ExerciseMentor/shared/form_input_validator.dart';
 
 import 'package:drift/drift.dart' as drift;
 
@@ -23,17 +21,12 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
   bool _showEditForm = false; // whether to show the edit form
 
   void aggregateDataByDate(Movement movement) async {
-    /// fetch data from db and aggregate by date, sorting from most -> least recent
-
     var results = await (await widget._db.select(widget._db.weightliftingSet)
           ..where((e) => (e.movement.equals(movement.name))))
         .get();
-    print("Found ${results.length} entries for ${movement.name}: \n$results");
 
     final byDate = Map<DateTime, List<WeightliftingSetData>>();
     results.forEach((e) {
-      // aggregate sets by date performed
-      print(e);
       final ts = e.timestamp;
       final date = DateTime(ts.year, ts.month, ts.day); // remove time data
       if (byDate.containsKey(date)) {
@@ -43,40 +36,126 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       }
     });
 
-    // order the sets by date performed from most -> least recent
+    // First sort the sets within each date
+    byDate.forEach((timestamp, workoutData) {
+      // Sort individual sets by timestamp (newest first)
+      workoutData.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    });
+
+    // Then create the ordered map entries
     List<MapEntry<DateTime, List<WeightliftingSetData>>> listFromMap = [];
     byDate.forEach((ts, entry) {
       listFromMap.add(MapEntry(ts, entry));
     });
+
+    // Sort by date (newest first)
     listFromMap.sort((a, b) => b.key.compareTo(a.key));
-    setsOrderedByDate = listFromMap;
 
-    // convert to a list
-    print(byDate);
-    byDate.entries.toList().sort((a, b) => b.key.compareTo(a.key));
-    print(byDate);
-
-    byDate.forEach((timestamp, workoutData) {
-      // order the individual sets for a given workout by timestamp (most -> least recent)
-      workoutData.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    setState(() {
+      setsOrderedByDate = listFromMap;
     });
-
-    setState(() {});
   }
 
-  Future updateEntry(AppDatabase db, int id, String movement, int nOfReps,
-      double weight, String equipmentType) async {
-    // update entry in db
-    print(
-        "Updating entry with id: $id & data = $movement | $nOfReps | $weight | $equipmentType");
-    return await (db.update(db.weightliftingSet)
-          ..where((entry) => entry.id.equals(id)))
-        .write(WeightliftingSetCompanion(
-      movement: drift.Value(movement),
-      nOfReps: drift.Value(nOfReps),
-      weight: drift.Value(weight),
-      equipmentType: drift.Value(equipmentType),
-    ));
+  void _showEditDialog(
+      BuildContext context, int id, WeightliftingSetData exercise) {
+    // Controllers for the form fields, pre-populated with current values
+    final TextEditingController movementController =
+        TextEditingController(text: exercise.movement);
+    final TextEditingController repsController =
+        TextEditingController(text: exercise.nOfReps.toString());
+    final TextEditingController weightController =
+        TextEditingController(text: exercise.weight.toString());
+    String selectedEquipmentType = exercise.equipmentType;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Exercise'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: movementController,
+                  decoration: InputDecoration(labelText: 'Exercise Name'),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: repsController,
+                  decoration: InputDecoration(labelText: 'Reps'),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: weightController,
+                  decoration: InputDecoration(labelText: 'Weight (lbs)'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+                SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedEquipmentType,
+                  decoration: InputDecoration(labelText: 'Equipment Type'),
+                  items: EQUIPMENTTYPES.map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      selectedEquipmentType = value;
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                try {
+                  final movement = movementController.text;
+                  final nOfReps = int.parse(repsController.text);
+                  final weight = double.parse(weightController.text);
+
+                  // Update the entry in the database
+                  await AppDatabase.updateEntry(widget._db, id, movement,
+                      nOfReps, weight, selectedEquipmentType);
+
+                  // Close the dialog
+                  Navigator.of(context).pop();
+
+                  // Refresh the data display
+                  if (setsOrderedByDate.isNotEmpty &&
+                      setsOrderedByDate[0].value.isNotEmpty) {
+                    final currentMovement = Movement(
+                        id: 0, name: setsOrderedByDate[0].value[0].movement);
+                    aggregateDataByDate(currentMovement);
+                  }
+
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Exercise updated successfully')));
+                } catch (e) {
+                  // Show error for invalid inputs
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          'Please enter valid values for reps and weight')));
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget showEditForm(int id) {
@@ -113,7 +192,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
             // for weighted sets, display string showing aggregated weight
             if (type == EQUIPMENTTYPE_DUMBBELL) {
               // double value for dumbbells since weight is in each hand
-              print("dumbbell! total weight: $totalWeight");
+              print("total weight: $totalWeight");
               totalWeight = listOfWorkoutSets
                   .where((e) => (e.equipmentType == type))
                   .fold<double>(totalWeight, (previous, element) {
@@ -123,7 +202,7 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
               print(totalWeight);
             } else {
               // default option, simply aggregate weight x reps
-              print("not dumbbell, type: $type, weight: $totalWeight");
+              print("type: $type, weight: $totalWeight");
               totalWeight = listOfWorkoutSets
                   .where((e) => (e.equipmentType == type))
                   .fold<double>(totalWeight, (previous, element) {
@@ -137,10 +216,12 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
       });
       print("Total weight: $totalWeight | nOfReps: $nOfReps");
 
-      listOfWorkoutSets.forEach((element) {
+      List<WeightliftingSetData> sortedSets = List.from(listOfWorkoutSets);
+
+      sortedSets.forEach((element) {
         entryID = element.id;
-        int _td = listOfWorkoutSets.first.timestamp
-            .difference(listOfWorkoutSets.last.timestamp)
+        int _td = sortedSets.first.timestamp
+            .difference(sortedSets.last.timestamp)
             .inSeconds;
         timeElapsed = "${(_td / 60).floor()}m ${_td % 60}s";
         dataForSet.add(
@@ -161,17 +242,20 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
         Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
-            children: dataForSet
-                .map((data) => TextButton(
-                      child: Text(data),
-                      style: TextButton.styleFrom(
-                        shadowColor: Colors.transparent,
-                        foregroundColor: Colors.black,
-                        backgroundColor: Colors.transparent,
-                      ),
-                      onPressed: () => _showEditForm,
-                    ))
-                .toList(),
+            children: List.generate(dataForSet.length, (index) {
+              return TextButton(
+                child: Text(dataForSet[index]),
+                style: TextButton.styleFrom(
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.transparent,
+                ),
+                onPressed: () {
+                  _showEditDialog(
+                      context, sortedSets[index].id, sortedSets[index]);
+                },
+              );
+            }),
           ),
         ),
       ]));
@@ -181,60 +265,65 @@ class _VisualizerWidgetState extends State<VisualizerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          (_showEditForm) ? showEditForm(1) : Container(),
-          Text('View Workouts by Exercise'),
-          TypeAheadField<Movement>(
-            controller: _searchBarController,
-            builder: (context, controller, focusNode) {
-              return TextFormField(
-                controller: controller,
-                focusNode: focusNode,
-                decoration: const InputDecoration(
-                    hintText: "search by movement", icon: Icon(Icons.search)),
-                validator: StringFormInputValidator().validateInput,
-                onSaved: (String? value) {},
-              );
-            },
-            itemBuilder: (context, suggestion) {
-              return ListTile(
-                title: Text(suggestion.name),
-              );
-            },
-            onSelected: (value) {
-              // fetch data for selection and load table
-              _searchBarController.text = value.name;
-              aggregateDataByDate(value);
-            },
-            suggestionsCallback: (input) async {
-              if (input.isEmpty) {
-                return null;
-              }
-              var results = await widget._db.select(widget._db.movements).get();
-              return results
-                  .where(
-                      (e) => e.name.toLowerCase().contains(input.toLowerCase()))
-                  .toList();
-            },
-            hideOnEmpty: true,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        // Keep search section at the top (fixed)
+        (_showEditForm) ? showEditForm(1) : Container(),
+        Text('View Workouts by Exercise'),
+        TypeAheadField<Movement>(
+          controller: _searchBarController,
+          builder: (context, controller, focusNode) {
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                  hintText: "search by movement", icon: Icon(Icons.search)),
+              validator: StringFormInputValidator().validateInput,
+              onSaved: (String? value) {},
+            );
+          },
+          itemBuilder: (context, suggestion) {
+            return ListTile(
+              title: Text(suggestion.name),
+            );
+          },
+          onSelected: (value) {
+            // fetch data for selection and load table
+            _searchBarController.text = value.name;
+            aggregateDataByDate(value);
+          },
+          suggestionsCallback: (input) async {
+            if (input.isEmpty) {
+              return null;
+            }
+            var results = await widget._db.select(widget._db.movements).get();
+            return results
+                .where(
+                    (e) => e.name.toLowerCase().contains(input.toLowerCase()))
+                .toList();
+          },
+          hideOnEmpty: true,
+        ),
+
+        // Make the table portion scrollable
+        Expanded(
+          child: SingleChildScrollView(
+            child: Table(
+              border: TableBorder.all(color: Colors.deepOrange),
+              children: [
+                TableRow(children: [
+                  Center(child: Text('Date')),
+                  Center(child: Text('Movement')),
+                  Center(child: Text('Total Weight Moved in Time')),
+                  Center(child: Text('Consolidated Data')),
+                ]),
+                ...makeRemainingRows(),
+              ],
+            ),
           ),
-          Table(
-            border: TableBorder.all(color: Colors.deepOrange),
-            children: [
-              TableRow(children: [
-                Center(child: Text('Date')),
-                Center(child: Text('Movement')),
-                Center(child: Text('Total Weight Moved in Time')),
-                Center(child: Text('Consolidated Data')),
-              ]),
-              ...makeRemainingRows(),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

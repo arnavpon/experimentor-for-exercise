@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:test/models/database.dart';
+import 'package:ExerciseMentor/models/database.dart';
 import '../../shared/useful_string_extensions.dart';
 
 // Shows salient information for the ongoing workout (if one is taking place) or the most recent workout

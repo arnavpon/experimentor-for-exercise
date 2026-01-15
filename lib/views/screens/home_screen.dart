@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:test/models/database.dart';
-import 'package:test/providers.dart';
-import 'package:test/views/widgets/logger_form.dart';
-import 'package:test/views/widgets/visualizer.dart';
-import 'package:test/views/widgets/workout_summary.dart';
+import 'package:ExerciseMentor/models/database.dart';
+import 'package:ExerciseMentor/providers.dart';
+import 'package:ExerciseMentor/views/widgets/logger_form.dart';
+import 'package:ExerciseMentor/views/widgets/visualizer.dart';
+import 'package:ExerciseMentor/views/widgets/workout_summary.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);

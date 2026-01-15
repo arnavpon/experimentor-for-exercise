@@ -25,4 +25,5 @@ class WeightliftingSet extends ExerciseSet {
 class CardioSet extends ExerciseSet {
   RealColumn get distance => real()();
   RealColumn get duration => real()();
+  RealColumn get powerOutput => real()();
 }

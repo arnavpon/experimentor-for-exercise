@@ -68,4 +68,25 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+
+  static Future<void> updateEntry(AppDatabase db, int id, String movement,
+      int nOfReps, double weight, String equipmentType) async {
+    // First, get the original record to preserve its timestamp
+    final originalRecord = await (db.select(db.weightliftingSet)
+          ..where((tbl) => tbl.id.equals(id)))
+        .getSingle();
+
+    // Update the record with the new values but keep the original timestamp
+    await db.update(db.weightliftingSet).replace(
+          WeightliftingSetData(
+            id: id,
+            movement: movement,
+            equipmentType: equipmentType,
+            nOfReps: nOfReps,
+            weight: weight,
+            timestamp:
+                originalRecord.timestamp, // Preserve the original timestamp
+          ),
+        );
+  }
 }
