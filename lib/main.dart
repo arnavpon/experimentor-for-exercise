@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:test/providers.dart';
+import 'package:ExerciseMentor/providers.dart';
 import 'views/screens/home_screen.dart';
 
 void main() async {
